@@ -1,5 +1,5 @@
-import config
-import actions
+from game import config
+from game import actions
 
 
 class Player(object):

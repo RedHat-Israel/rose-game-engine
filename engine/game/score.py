@@ -1,9 +1,9 @@
 """ Score logic """
 import logging
 
-import config
-import actions
-import obstacles
+from game import config
+from game import actions
+from game import obstacles
 
 log = logging.getLogger("score")
 

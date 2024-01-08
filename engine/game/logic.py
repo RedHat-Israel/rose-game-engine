@@ -3,12 +3,12 @@ import logging
 import random
 import aiohttp
 
-import config
+from game import config
 
-import score
-import net
-from player import Player
-from track import Track
+from game import score
+from game import net
+from game.player import Player
+from game.track import Track
 
 log = logging.getLogger("logic")
 
