@@ -129,3 +129,41 @@ The response in `JSON` format should include the car name and the recommended ac
   }
 }
 ```
+
+## Batch simulation (headless automation)
+
+`simulate.py` runs many full games back-to-back between two drivers, without a
+websocket/UI and without the live game's rate throttle, then writes aggregated
+win/loss/tie stats to a JSON file. This is the same HTTP driver contract used by
+the live engine (see `Testing your driver` above), so it works against any real
+`rose-game-ai` driver process, community driver, or your own `mydriver.py`.
+
+```bash
+# Start two drivers first, e.g.:
+#   (cd ../rose-game-ai && python main.py --driver mydriver.py --port 8081)
+#   (cd ../rose-game-ai && python main.py --driver examples/driver.py --port 8082)
+
+python simulate.py \
+  --drivers http://127.0.0.1:8081 http://127.0.0.1:8082 \
+  --games 50 \
+  --track random \
+  --output batch_stats.json
+```
+
+`batch_stats.json` contains per-driver `wins`/`losses`/`ties`/`avg_score`, plus a
+`per_game` breakdown:
+
+```json
+{
+  "games": 50,
+  "track_type": "random",
+  "drivers": ["http://127.0.0.1:8081", "http://127.0.0.1:8082"],
+  "results": {
+    "DriverA": {"wins": 27, "losses": 21, "ties": 2, "avg_score": 612.4},
+    "DriverB": {"wins": 21, "losses": 27, "ties": 2, "avg_score": 588.9}
+  },
+  "per_game": [{"scores": {"DriverA": 620, "DriverB": 590}, "winner": "DriverA"}]
+}
+```
+
+Run `python simulate.py --help` for all options.

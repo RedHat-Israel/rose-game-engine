@@ -24,4 +24,4 @@ ENV PORT 8880
 EXPOSE 8880
 
 # Define the command to run your app using CMD which defines your runtime
-CMD ["sh", "-c", "python rose/main.py --listen 0.0.0.0 --track ${TRACK} --port ${PORT}"]
+CMD ["sh", "-c", "python main.py --listen 0.0.0.0 --track ${TRACK} --port ${PORT}"]

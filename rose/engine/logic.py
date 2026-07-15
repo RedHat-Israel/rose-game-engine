@@ -14,9 +14,15 @@ log = logging.getLogger("logic")
 
 
 async def initialize_game(state):
-    """Reset game settings and return re-initialized track and players."""
+    """Reset game settings and return re-initialized track and players.
+
+    Does NOT touch state["running"] — the game loop only polls the reset
+    flag periodically, so clobbering running here would silently drop a
+    Run request issued shortly after Reset, before this had a chance to run.
+    Callers that want reset to also stop the game must set running=0
+    themselves, atomically with the reset request.
+    """
     state["reset"] = None
-    state["running"] = 0
     state["timeleft"] = config.game_duration
     track = initialize_track(state["track_type"] != "same")
     players = await initialize_players(state["drivers"])
@@ -74,13 +80,23 @@ async def initialize_players(drivers):
     return players
 
 
-async def game_loop(state, active_websockets):
+def determine_winner(players):
+    """Return the name of the highest-scoring player, or None if tied/empty."""
+    if not players:
+        return None
+    best_score = max(player.score for player in players)
+    leaders = [player.name for player in players if player.score == best_score]
+    return leaders[0] if len(leaders) == 1 else None
+
+
+async def game_loop(state, active_websockets, telemetry=None):
     """
     Asynchronously execute the game loop, using provided state and active websockets.
 
     Args:
         state (dict): Dictionary containing game state data (rate, running status, time left, etc.).
         active_websockets (set): A set of active websocket connections for communication.
+        telemetry (TelemetryObserver, optional): observer notified on each tick. Defaults to None.
 
     Returns:
         None
@@ -103,7 +119,7 @@ async def game_loop(state, active_websockets):
         if state["running"] == 1:
             # Start executing a step in the game
             task = asyncio.create_task(
-                game_step(state, players, track, active_websockets)
+                game_step(state, players, track, active_websockets, telemetry)
             )
 
             # Pause the game loop for a specified duration, based on the rate defined in the state
@@ -121,7 +137,33 @@ async def game_loop(state, active_websockets):
             await asyncio.sleep(1)
 
 
-async def game_step(state, players, track, active_websockets):
+async def play_tick(players, track, telemetry=None, step_index=None):
+    """
+    Execute a single tick of game logic: fetch drivers' actions, advance the
+    track, and score the resulting player actions. Shared by the live
+    websocket-driven game loop and headless batch simulation.
+
+    Args:
+        players (list): List of Player objects.
+        track (Track): the game track.
+        telemetry (TelemetryObserver, optional): observer notified after scoring.
+        step_index (int, optional): tick counter passed through to the observer.
+    """
+
+    # Fetch players actions using an asynchronous HTTP session
+    await net.fetch_drivers_actions(players, track.matrix())
+
+    # Update track
+    track.update()
+
+    # Process the actions of the players
+    score.process(players, track)
+
+    if telemetry is not None:
+        telemetry.on_step(step_index, players, track)
+
+
+async def game_step(state, players, track, active_websockets, telemetry=None):
     """
     Execute a game step: Update the track, fetch drivers' actions, process actions, and update websockets.
 
@@ -130,23 +172,26 @@ async def game_step(state, players, track, active_websockets):
         players (list): List of Player objects.
         track (Track): the game track.
         active_websockets (Any): Active websockets for communication (assuming a suitable data structure).
+        telemetry (TelemetryObserver, optional): observer notified after scoring.
     """
 
     try:
-        # Fetch players actions using an asynchronous HTTP session
-        await net.fetch_drivers_actions(players, track.matrix())
-
-        # Update track
-        track.update()
-
-        # Process the actions of the players
-        score.process(players, track)
+        await play_tick(
+            players, track, telemetry, config.game_duration - state["timeleft"]
+        )
 
         # Send data to all WebSocket connections
         await net.update_websockets(True, state, players, track, active_websockets)
 
         # Progress the game's timer
         state["timeleft"] -= 1
+
+        if telemetry is not None and state["timeleft"] < 1:
+            result = {
+                "scores": {player.name: player.score for player in players},
+                "winner": determine_winner(players),
+            }
+            telemetry.on_game_end(players, result)
 
     except asyncio.CancelledError:
         log.info("Game step was canceled!")
