@@ -51,6 +51,10 @@ class LiveSink(TelemetryObserver):
         self._history = collections.deque(maxlen=max_ticks)
         self._recent_results = collections.deque(maxlen=max_results)
         self._total_finished = 0
+        # Snapshot of _total_finished as of the last clear(), subtracted out
+        # for display so round numbering restarts at 1 after a clear, without
+        # touching _total_finished itself (see result_count()/clear() below).
+        self._round_offset = 0
 
     def on_step(self, step_index, players, track):
         self._history.append(
@@ -78,21 +82,25 @@ class LiveSink(TelemetryObserver):
         return self._recent_results[-1] if self._recent_results else None
 
     def clear(self):
-        """Clear the displayed tick log and match history.
+        """Clear the displayed tick log, match history, and round numbering.
 
-        Deliberately leaves _total_finished untouched: it's used by
-        server._run_live_batch to detect "has another round finished",
-        and resetting it here would break any batch job in flight.
+        Deliberately leaves _total_finished itself untouched: it's used by
+        server._run_live_batch to detect "has another round finished", and
+        resetting it here would break any batch job in flight. Round
+        numbering for display is reset instead via _round_offset (see
+        snapshot()), so the next finished game shows as round 1 again
+        without disturbing that internal counter.
         """
         self._history.clear()
         self._recent_results.clear()
+        self._round_offset = self._total_finished
 
     def snapshot(self):
         """Return a JSON-serializable view of recent ticks and results."""
         return {
             "history": list(self._history),
             "recent_results": list(self._recent_results),
-            "total_finished": self._total_finished,
+            "total_finished": self._total_finished - self._round_offset,
         }
 
 

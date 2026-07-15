@@ -2,6 +2,7 @@ from rose.telemetry.observer import CompositeObserver
 from rose.telemetry.observer import NullObserver
 from rose.telemetry.observer import TelemetryObserver
 from rose.telemetry.sinks import InMemorySink
+from rose.telemetry.sinks import LiveSink
 
 
 def test_null_observer_is_a_noop():
@@ -55,6 +56,37 @@ def test_in_memory_sink_tracks_multiple_games_independently():
     sink.on_game_end(players=[], result={"scores": {}, "winner": None})
 
     assert len(sink.games) == 2
+
+
+def test_live_sink_clear_resets_displayed_round_numbering():
+    sink = LiveSink()
+
+    sink.on_game_end(players=None, result={"scores": {"A": 10}, "winner": "A"})
+    sink.on_game_end(players=None, result={"scores": {"A": 10}, "winner": "A"})
+    assert sink.snapshot()["total_finished"] == 2
+
+    sink.clear()
+    assert sink.snapshot()["total_finished"] == 0
+    assert sink.snapshot()["recent_results"] == []
+
+    sink.on_game_end(players=None, result={"scores": {"A": 10}, "winner": "A"})
+    assert sink.snapshot()["total_finished"] == 1
+
+
+def test_live_sink_clear_does_not_disturb_result_count():
+    # result_count() backs server._run_live_batch's "did another round
+    # finish" polling and must stay monotonic across a clear(), even though
+    # the displayed total_finished resets for round numbering.
+    sink = LiveSink()
+
+    sink.on_game_end(players=None, result={"scores": {"A": 10}, "winner": "A"})
+    assert sink.result_count() == 1
+
+    sink.clear()
+    assert sink.result_count() == 1
+
+    sink.on_game_end(players=None, result={"scores": {"A": 10}, "winner": "A"})
+    assert sink.result_count() == 2
 
 
 def test_composite_observer_fans_out_to_children():
