@@ -34,6 +34,7 @@ class Player(object):
         self.response_time = None
         self.score = None
         self.pickups = None
+        self.coins = None
         self.misses = None
         self.hits = None
         self.breaks = None
@@ -48,6 +49,7 @@ class Player(object):
         self.response_time = None
         self.score = 0
         self.pickups = 0
+        self.coins = 0
         self.misses = 0
         self.hits = 0
         self.breaks = 0
@@ -79,6 +81,7 @@ class Player(object):
             "lane": self.lane,
             "score": self.score,
             "pickups": self.pickups,
+            "coins": self.coins,
             "misses": self.misses,
             "hits": self.hits,
             "breaks": self.breaks,

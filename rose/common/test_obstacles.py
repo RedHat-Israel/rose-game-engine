@@ -6,6 +6,7 @@ from rose.common.obstacles import (
     BIKE,
     WATER,
     BARRIER,
+    COIN,
     ALL,
     get_random_obstacle,
 )
@@ -19,10 +20,11 @@ def test_constants():
     assert BIKE == "bike"
     assert WATER == "water"
     assert BARRIER == "barrier"
+    assert COIN == "coin"
 
 
 def test_all_constant():
-    assert ALL == (NONE, CRACK, TRASH, PENGUIN, BIKE, WATER, BARRIER)
+    assert ALL == (NONE, CRACK, TRASH, PENGUIN, BIKE, WATER, BARRIER, COIN)
 
 
 def test_get_random_obstacle():

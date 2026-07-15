@@ -80,6 +80,7 @@ def test_player_state():
         "lane": 1,
         "score": 0,
         "pickups": 0,
+        "coins": 0,
         "misses": 0,
         "hits": 0,
         "breaks": 0,
