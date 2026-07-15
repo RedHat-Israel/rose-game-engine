@@ -8,6 +8,7 @@ evaluation of drivers (e.g. CI, tournaments) and for feeding a telemetry sink.
 """
 
 import logging
+import time
 
 from rose.engine import config
 from rose.engine import logic
@@ -27,7 +28,8 @@ async def run_single_game(drivers, track_type, telemetry=None):
 
     Returns:
         dict: {"scores": {driver_name: score, ...}, "winner": name_or_None,
-            "players": {driver_name: Player.state(), ...}}.
+            "players": {driver_name: Player.state(), ...},
+            "duration_seconds": float}.
 
     Raises:
         RuntimeError: if any driver failed to respond during initialization.
@@ -44,6 +46,7 @@ async def run_single_game(drivers, track_type, telemetry=None):
     if telemetry is not None:
         telemetry.on_game_start(track, players, {"track_type": track_type})
 
+    started_at = time.monotonic()
     for step_index in range(config.game_duration):
         await logic.play_tick(players, track, telemetry, step_index)
 
@@ -51,6 +54,7 @@ async def run_single_game(drivers, track_type, telemetry=None):
         "scores": {player.name: player.score for player in players},
         "winner": logic.determine_winner(players),
         "players": {player.name: player.state() for player in players},
+        "duration_seconds": round(time.monotonic() - started_at, 2),
     }
 
     if telemetry is not None:

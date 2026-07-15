@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+import time
 import aiohttp
 
 from rose.engine import config
@@ -24,6 +25,7 @@ async def initialize_game(state):
     """
     state["reset"] = None
     state["timeleft"] = config.game_duration
+    state["game_started_at"] = time.monotonic()
     track = initialize_track(state["track_type"] != "same")
     players = await initialize_players(state["drivers"])
     return track, players
@@ -191,6 +193,9 @@ async def game_step(state, players, track, active_websockets, telemetry=None):
                 "scores": {player.name: player.score for player in players},
                 "winner": determine_winner(players),
                 "players": {player.name: player.state() for player in players},
+                "duration_seconds": round(
+                    time.monotonic() - state["game_started_at"], 2
+                ),
             }
             telemetry.on_game_end(players, result)
 
