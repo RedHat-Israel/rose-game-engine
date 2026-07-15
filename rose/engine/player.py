@@ -34,9 +34,7 @@ class Player(object):
         self.response_time = None
         self.score = None
         self.pickups = None
-        self.coins = None
         self.misses = None
-        self.coin_misses = None
         self.hits = None
         self.wall_hits = None
         self.water_hits = None
@@ -53,9 +51,7 @@ class Player(object):
         self.response_time = None
         self.score = 0
         self.pickups = 0
-        self.coins = 0
         self.misses = 0
-        self.coin_misses = 0
         self.hits = 0
         self.wall_hits = 0
         self.water_hits = 0
@@ -89,9 +85,7 @@ class Player(object):
             "lane": self.lane,
             "score": self.score,
             "pickups": self.pickups,
-            "coins": self.coins,
             "misses": self.misses,
-            "coin_misses": self.coin_misses,
             "hits": self.hits,
             "wall_hits": self.wall_hits,
             "water_hits": self.water_hits,

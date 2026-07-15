@@ -162,34 +162,6 @@ def process(players, track):
 
                 log.debug("player %s missed %s", player.name, obstacle)
 
-        elif obstacle == obstacles.COIN:
-            if player.action == actions.PICKUP:
-                # Move forward and collect a coin. Coins are worth nothing
-                # on their own; only the coin that completes the jackpot
-                # tally awards points, and further coins award nothing more.
-                track.clear(player.x, player.y)
-                player.coins += 1
-                points = config.score_move_forward
-                if player.coins == config.coins_for_jackpot:
-                    points += config.score_jackpot
-                player.score += points
-                player.pickups += 1
-
-                log.debug(
-                    "player %s picked up %s (%d/%d): got %d points",
-                    player.name,
-                    obstacle,
-                    player.coins,
-                    config.coins_for_jackpot,
-                    points,
-                )
-            else:
-                # Move forward leaving the obstacle on the track
-                player.score += config.score_move_forward
-                player.coin_misses += 1
-
-                log.debug("player %s missed %s", player.name, obstacle)
-
         # Here we can end the game when player gets out of
         # the track bounds. For now, just keep the player at the same
         # location.

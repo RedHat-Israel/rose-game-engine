@@ -9,9 +9,8 @@ PENGUIN = "penguin"  # NOQA
 BIKE = "bike"  # NOQA
 WATER = "water"  # NOQA
 BARRIER = "barrier"  # NOQA
-COIN = "coin"  # NOQA
 
-ALL = (NONE, CRACK, TRASH, PENGUIN, BIKE, WATER, BARRIER, COIN)
+ALL = (NONE, CRACK, TRASH, PENGUIN, BIKE, WATER, BARRIER)
 
 
 def get_random_obstacle():
