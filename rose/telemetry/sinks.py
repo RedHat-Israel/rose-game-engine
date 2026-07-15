@@ -92,6 +92,7 @@ class LiveSink(TelemetryObserver):
         return {
             "history": list(self._history),
             "recent_results": list(self._recent_results),
+            "total_finished": self._total_finished,
         }
 
 

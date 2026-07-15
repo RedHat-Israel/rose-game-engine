@@ -79,15 +79,21 @@ async def admin_handler(request):
     return web.Response(text=json.dumps(state))
 
 
+def _telemetry_snapshot():
+    snapshot = telemetry.snapshot()
+    snapshot["running"] = bool(state.get("running"))
+    return snapshot
+
+
 async def telemetry_handler(request):
     """Return recent per-tick history and recently finished game results."""
-    return web.json_response(telemetry.snapshot())
+    return web.json_response(_telemetry_snapshot())
 
 
 async def telemetry_clear_handler(request):
     """Clear the displayed tick log and match history."""
     telemetry.clear()
-    return web.json_response(telemetry.snapshot())
+    return web.json_response(_telemetry_snapshot())
 
 
 async def simulate_start_handler(request):

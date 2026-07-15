@@ -26,7 +26,8 @@ async def run_single_game(drivers, track_type, telemetry=None):
         telemetry (TelemetryObserver, optional): observer notified per tick.
 
     Returns:
-        dict: {"scores": {driver_name: score, ...}, "winner": name_or_None}.
+        dict: {"scores": {driver_name: score, ...}, "winner": name_or_None,
+            "players": {driver_name: Player.state(), ...}}.
 
     Raises:
         RuntimeError: if any driver failed to respond during initialization.
@@ -49,6 +50,7 @@ async def run_single_game(drivers, track_type, telemetry=None):
     result = {
         "scores": {player.name: player.score for player in players},
         "winner": logic.determine_winner(players),
+        "players": {player.name: player.state() for player in players},
     }
 
     if telemetry is not None:

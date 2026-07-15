@@ -190,6 +190,7 @@ async def game_step(state, players, track, active_websockets, telemetry=None):
             result = {
                 "scores": {player.name: player.score for player in players},
                 "winner": determine_winner(players),
+                "players": {player.name: player.state() for player in players},
             }
             telemetry.on_game_end(players, result)
 

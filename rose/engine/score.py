@@ -70,6 +70,7 @@ def process(players, track):
             player.y += 1
             player.score += config.score_move_backward
             player.hits += 1
+            player.wall_hits += 1
 
             log.debug(
                 "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -99,6 +100,7 @@ def process(players, track):
                 player.y += 1
                 player.score += config.score_move_backward
                 player.hits += 1
+                player.crack_hits += 1
 
                 log.debug(
                     "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -128,6 +130,7 @@ def process(players, track):
                 player.y += 1
                 player.score += config.score_move_backward
                 player.hits += 1
+                player.water_hits += 1
 
                 log.debug(
                     "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -155,6 +158,7 @@ def process(players, track):
             else:
                 # Move forward leaving the obstacle on the track
                 player.score += config.score_move_forward
+                player.misses += 1
 
                 log.debug("player %s missed %s", player.name, obstacle)
 
@@ -182,6 +186,7 @@ def process(players, track):
             else:
                 # Move forward leaving the obstacle on the track
                 player.score += config.score_move_forward
+                player.coin_misses += 1
 
                 log.debug("player %s missed %s", player.name, obstacle)
 
