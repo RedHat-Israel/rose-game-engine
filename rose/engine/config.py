@@ -18,3 +18,6 @@ score_move_backward = -10
 score_pickup = 10
 score_jump = 5
 score_brake = 4
+
+grandma_spawn_window_1 = (5, 30)
+grandma_spawn_window_2_start = 31   # window 2 end = game_duration

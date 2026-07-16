@@ -13,10 +13,29 @@ class Track(object):
     # Game state interface
 
     def update(self):
-        """Go to the next game state"""
+        self._tick += 1
         self._matrix.pop()
-        self._matrix.insert(0, self._generate_row())
 
+        still_active = []
+        for grandma in self._active_grandmas:
+            grandma["age"] += 1
+            if grandma["age"] < config.matrix_height:
+                old_col = grandma["path"][grandma["age"] - 1]
+                new_col = grandma["path"][grandma["age"]]
+                self.clear(old_col, grandma["age"])
+                self.set(new_col, grandma["age"], obstacles.GRANDMA)
+                still_active.append(grandma)
+            # else: she scrolled past the last row and was just popped — drop her
+        self._active_grandmas = still_active
+
+        if self._pending_spawns and self._pending_spawns[0] == self._tick:
+            self._pending_spawns.pop(0)
+            row, path = self._spawn_grandma_row()
+            self._active_grandmas.append({"path": path, "age": 0})
+            self._matrix.insert(0, row)
+        else:
+            self._matrix.insert(0, self._generate_row())
+        
     def state(self):
         """Return read only serialize-able state for sending to client"""
         items = []
@@ -49,6 +68,13 @@ class Track(object):
             [obstacles.NONE] * config.matrix_width for x in range(config.matrix_height)
         ]
 
+        self._tick = 0
+        self._active_grandmas = []
+        self._pending_spawns = sorted([
+            random.randint(*config.grandma_spawn_window_1),
+            random.randint(config.grandma_spawn_window_2_start, config.game_duration),
+        ])
+
     # Private
 
     def _generate_row(self):
@@ -80,3 +106,16 @@ class Track(object):
                 row[cell + lane * config.cells_per_player] = obstacle
 
         return row
+
+    def _spawn_grandma_row(self):
+        row = [obstacles.NONE] * config.matrix_width
+        col = random.randrange(config.matrix_width)
+        direction = random.choice((-1, 1))
+        path = [col]
+        for _ in range(config.matrix_height - 1):
+            if col + direction < 0 or col + direction >= config.matrix_width:
+                direction *= -1
+            col += direction
+            path.append(col)
+        row[path[0]] = obstacles.GRANDMA
+        return row, path
