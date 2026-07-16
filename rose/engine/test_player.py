@@ -85,6 +85,8 @@ def test_player_state():
         "breaks": 0,
         "jumps": 0,
         "collisions": 0,
+        "fuel": config.starting_fuel,
+        "refuels": 0,
     }
 
     assert player1.state() == expected_state
