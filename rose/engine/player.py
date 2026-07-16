@@ -36,6 +36,9 @@ class Player(object):
         self.pickups = None
         self.misses = None
         self.hits = None
+        self.wall_hits = None
+        self.water_hits = None
+        self.crack_hits = None
         self.breaks = None
         self.jumps = None
         self.collisions = None
@@ -50,6 +53,9 @@ class Player(object):
         self.pickups = 0
         self.misses = 0
         self.hits = 0
+        self.wall_hits = 0
+        self.water_hits = 0
+        self.crack_hits = 0
         self.breaks = 0
         self.collisions = 0
         self.jumps = 0
@@ -81,6 +87,9 @@ class Player(object):
             "pickups": self.pickups,
             "misses": self.misses,
             "hits": self.hits,
+            "wall_hits": self.wall_hits,
+            "water_hits": self.water_hits,
+            "crack_hits": self.crack_hits,
             "breaks": self.breaks,
             "jumps": self.jumps,
             "collisions": self.collisions,

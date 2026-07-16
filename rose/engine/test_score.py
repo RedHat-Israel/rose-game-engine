@@ -119,6 +119,7 @@ class TestPenguin(SinglePlayerTest):
         self.process()
         self.assert_score(self.score)
         self.assert_keep_obstacle()
+        assert self.player.misses == 1
 
 
 class MagicActionTest(SinglePlayerTest):
@@ -132,6 +133,7 @@ class MagicActionTest(SinglePlayerTest):
     # Must be defined in subclass
     action = None
     magic_score = None
+    hit_field = None
 
     @pytest.mark.parametrize("action", FORWARD_ACTIONS)
     def test_forward(self, action):
@@ -143,6 +145,7 @@ class MagicActionTest(SinglePlayerTest):
         else:
             self.assert_move_back()
             self.assert_remove_obstacle()
+            assert getattr(self.player, self.hit_field) == 1
 
     def test_right(self):
         self.player.action = actions.RIGHT
@@ -161,12 +164,14 @@ class TestCrack(MagicActionTest):
     magic_score = config.score_jump
     obstacle = obstacles.CRACK
     action = actions.JUMP
+    hit_field = "crack_hits"
 
 
 class TestWater(MagicActionTest):
     magic_score = config.score_brake
     obstacle = obstacles.WATER
     action = actions.BRAKE
+    hit_field = "water_hits"
 
 
 class TurnTest(SinglePlayerTest):
@@ -195,6 +200,7 @@ class TurnTest(SinglePlayerTest):
         # TODO: decrease points on redundant action?
         self.assert_move_back_no_punish()
         self.assert_remove_obstacle()
+        assert self.player.wall_hits == 1
 
 
 class TestTrash(TurnTest):
