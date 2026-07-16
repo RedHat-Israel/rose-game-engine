@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -6,6 +7,7 @@ from aiohttp.test_utils import TestServer
 
 from rose.common import actions
 from rose.engine import config
+from rose.engine import logic
 from rose.engine import server
 from rose.telemetry.sinks import LiveSink
 
@@ -96,31 +98,56 @@ def test_simulate_status_unknown_job_is_404():
 
 
 def test_simulate_job_runs_in_background_and_completes(monkeypatch):
+    # _run_live_batch (behind /simulate) drives games through the shared
+    # game_loop, same as manual play would -- it doesn't call simulate.py's
+    # headless runner. So this test must actually run that loop in the
+    # background, same as server.run() does in production, or state/reset
+    # signals never get picked up and the job hangs forever.
     monkeypatch.setattr(config, "game_duration", 4)
+    server.state.update(
+        {
+            "rate": 50,
+            "running": 0,
+            "reset": None,
+            "drivers": [],
+            "timeleft": None,
+            "track_type": "same",
+        }
+    )
 
     async def scenario():
-        async with FakeDriver(
-            "DriverA", lambda payload: actions.NONE
-        ) as url_a, FakeDriver(
-            "DriverB", lambda payload: actions.NONE
-        ) as url_b, TestClient(
-            TestServer(build_app())
-        ) as client:
-            start_resp = await client.post(
-                "/simulate",
-                json={"drivers": [url_a, url_b], "games": 2, "track": "same"},
-            )
-            assert start_resp.status == 202
-            job_id = (await start_resp.json())["job_id"]
+        loop_task = asyncio.create_task(
+            logic.game_loop(server.state, server.active_websockets, server.telemetry)
+        )
+        try:
+            async with FakeDriver(
+                "DriverA", lambda payload: actions.NONE
+            ) as url_a, FakeDriver(
+                "DriverB", lambda payload: actions.NONE
+            ) as url_b, TestClient(
+                TestServer(build_app())
+            ) as client:
+                start_resp = await client.post(
+                    "/simulate",
+                    json={"drivers": [url_a, url_b], "games": 2, "track": "same"},
+                )
+                assert start_resp.status == 202
+                job_id = (await start_resp.json())["job_id"]
 
-            for _ in range(200):
-                status_resp = await client.get(f"/simulate/{job_id}")
-                body = await status_resp.json()
-                if body["status"] != "running":
-                    return body
-                await asyncio.sleep(0.01)
+                # Budget comfortably above the mandatory 2s INTER_ROUND_PAUSE_S
+                # between the 2 games plus tick overhead.
+                for _ in range(400):
+                    status_resp = await client.get(f"/simulate/{job_id}")
+                    body = await status_resp.json()
+                    if body["status"] != "running":
+                        return body
+                    await asyncio.sleep(0.02)
 
-            raise AssertionError("job never finished")
+                raise AssertionError("job never finished")
+        finally:
+            loop_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await loop_task
 
     job = asyncio.run(scenario())
 
