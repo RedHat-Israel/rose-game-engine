@@ -146,7 +146,6 @@ def process(players, track):
                     player.y,
                 )
 
-
         elif obstacle == obstacles.PENGUIN:
             if player.action == actions.PICKUP:
                 # Move forward and collect an aquatic bird
@@ -211,8 +210,8 @@ def process(players, track):
             player.response_time,
         )
 
+
 def calc_pinguin_combo(base, pcnt):
     if pcnt < 1:
-         return base
+        return base
     return base + pcnt - 1
-
