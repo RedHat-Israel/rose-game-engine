@@ -39,8 +39,6 @@ async def admin_handler(request):
     Returns:
         aiohttp.web.Response: A response indicating the new game rate or an error message.
     """
-    global state
-
     rate = request.rel_url.query.get("rate")
     if rate:
         try:
@@ -240,8 +238,6 @@ async def run(
         theme (str): Path to the static them resources directory.
         track_type (str): Type of track can be "random" or "same".
     """
-    global state
-
     state["rate"] = initial_rate
     state["running"] = 1 if initial_running else 0
     state["drivers"] = initial_drivers
