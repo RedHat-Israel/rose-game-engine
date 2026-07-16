@@ -42,8 +42,7 @@ def main():
 
     logging.basicConfig(level=getattr(logging, args.log.upper()))
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(
+    asyncio.run(
         server.run(
             args.port,
             args.listen,

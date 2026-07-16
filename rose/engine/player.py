@@ -39,6 +39,7 @@ class Player(object):
         self.breaks = None
         self.jumps = None
         self.collisions = None
+        self.pinguin_cnt = 0
         self.reset()
 
     def reset(self):
@@ -53,6 +54,7 @@ class Player(object):
         self.breaks = 0
         self.collisions = 0
         self.jumps = 0
+        self.pinguin_cnt = 0
 
     def __cmp__(self, other):
         x = self.score
@@ -65,6 +67,19 @@ class Player(object):
     def in_lane(self):
         current_lane = self.x // config.cells_per_player
         return current_lane == self.lane
+
+    def adjacent_lanes(self):
+        """
+        Return the absolute x-coordinates of all other routes within my
+        current lane-zone (my lane's cells_per_player cells), ordered by
+        distance from my current position (nearest first).
+        """
+        current_lane = self.x // config.cells_per_player
+        lane_start = current_lane * config.cells_per_player
+        lane_end = lane_start + config.cells_per_player
+
+        others = [x for x in range(lane_start, lane_end) if x != self.x]
+        return sorted(others, key=lambda x: abs(x - self.x))
 
     def state(self):
         """Return read only serialize-able state for sending to client"""
@@ -84,4 +99,5 @@ class Player(object):
             "breaks": self.breaks,
             "jumps": self.jumps,
             "collisions": self.collisions,
+            "pinguin_cnt": self.pinguin_cnt,
         }
