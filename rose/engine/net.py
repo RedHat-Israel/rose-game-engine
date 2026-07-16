@@ -21,7 +21,7 @@ async def fetch_drivers_actions(players, track_matrix):
     """
     async with aiohttp.ClientSession() as session:
         await asyncio.gather(
-            *(fetch_driver_action(session, player, track_matrix) for player in players),
+            *(fetch_driver_action(session, player, track_matrix) for player in players if not player.eliminated),
             return_exceptions=True,
         )
 

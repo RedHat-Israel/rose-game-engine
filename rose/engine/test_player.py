@@ -85,6 +85,7 @@ def test_player_state():
         "breaks": 0,
         "jumps": 0,
         "collisions": 0,
+        "eliminated": False
     }
 
     assert player1.state() == expected_state

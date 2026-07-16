@@ -40,6 +40,7 @@ class Player(object):
         self.jumps = None
         self.collisions = None
         self.reset()
+        self.eliminated = None
 
     def reset(self):
         self.x = self.lane * config.cells_per_player + 1  # | |0| | |1 | |
@@ -53,6 +54,7 @@ class Player(object):
         self.breaks = 0
         self.collisions = 0
         self.jumps = 0
+        self.eliminated = False
 
     def __cmp__(self, other):
         x = self.score
@@ -84,4 +86,5 @@ class Player(object):
             "breaks": self.breaks,
             "jumps": self.jumps,
             "collisions": self.collisions,
+            "eliminated": self.eliminated
         }
