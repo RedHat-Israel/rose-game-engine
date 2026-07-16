@@ -9,7 +9,10 @@ PENGUIN = "penguin"  # NOQA
 BIKE = "bike"  # NOQA
 WATER = "water"  # NOQA
 BARRIER = "barrier"  # NOQA
+FUEL = "fuel"  # NOQA
 
+# FUEL is not included: it is spawned by the track on its own schedule, not
+# by get_random_obstacle().
 ALL = (NONE, CRACK, TRASH, PENGUIN, BIKE, WATER, BARRIER)
 
 

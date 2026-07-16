@@ -256,6 +256,69 @@ class TestLimits(SinglePlayerTest):
         self.assert_remove_obstacle()
 
 
+class TestFuel(SinglePlayerTest):
+    """
+    Handling fuel cans and tank depletion.
+    """
+
+    obstacle = obstacles.FUEL
+
+    def test_pickup_refuels_and_moves_forward(self):
+        self.player.fuel = 10
+        self.player.action = actions.PICKUP
+        self.process()
+        assert self.player.x == self.x
+        assert self.player.y == self.y
+        assert self.player.score == self.score + config.score_move_forward
+        assert self.player.fuel == 10 + config.fuel_can_refill - config.fuel_per_move
+        assert self.player.refuels == 1
+        self.assert_remove_obstacle()
+
+    def test_no_pickup_does_not_refuel(self):
+        # Landing on a can without PICKUP is a normal clear cell: move forward,
+        # no refuel, no penalty, and the can stays for another player.
+        self.player.fuel = 10
+        self.player.action = actions.NONE
+        self.process()
+        assert self.player.x == self.x
+        assert self.player.y == self.y
+        assert self.player.score == self.score + config.score_move_forward
+        assert self.player.fuel == 10 - config.fuel_per_move
+        assert self.player.refuels == 0
+        self.assert_keep_obstacle()
+
+    def test_pickup_is_capped_at_max_fuel(self):
+        self.player.fuel = config.max_fuel
+        self.player.action = actions.PICKUP
+        self.process()
+        assert self.player.fuel == config.max_fuel - config.fuel_per_move
+
+    def test_fuel_decreases_each_turn(self):
+        self.track.set(self.x, self.y, obstacles.NONE)
+        self.player.fuel = config.starting_fuel
+        self.player.action = actions.NONE
+        self.process()
+        assert self.player.fuel == config.starting_fuel - config.fuel_per_move
+
+    def test_fuel_never_goes_below_zero(self):
+        self.track.set(self.x, self.y, obstacles.NONE)
+        self.player.fuel = 0
+        self.player.action = actions.NONE
+        self.process()
+        assert self.player.fuel == 0
+
+    def test_empty_tank_scores_a_plain_move(self):
+        # A car that runs out of fuel is stopped upstream in logic.game_step
+        # (it is filtered out before score.process is ever called for it).
+        # score.process itself no longer special-cases an empty tank -- if it
+        # ever runs with fuel=0 it still scores a plain, unhalved move.
+        self.track.set(self.x, self.y, obstacles.NONE)
+        self.player.fuel = 0
+        self.player.action = actions.NONE
+        self.process()
+        assert self.player.score == self.score + config.score_move_forward
+
+
 class TestCollisions(object):
     """
     Handling case where two players try to move to the same cell.

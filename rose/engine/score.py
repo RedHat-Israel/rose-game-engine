@@ -158,6 +158,28 @@ def process(players, track):
 
                 log.debug("player %s missed %s", player.name, obstacle)
 
+        elif obstacle == obstacles.FUEL:
+            if player.action == actions.PICKUP:
+                # Move forward and collect the can, refilling the tank (capped).
+                track.clear(player.x, player.y)
+                player.fuel = min(
+                    config.max_fuel, player.fuel + config.fuel_can_refill
+                )
+                player.score += config.score_move_forward
+                player.refuels += 1
+
+                log.debug(
+                    "player %s refueled: fuel=%d, got %d points",
+                    player.name,
+                    player.fuel,
+                    config.score_move_forward,
+                )
+            else:
+                # Move forward leaving the can on the track (no refuel).
+                player.score += config.score_move_forward
+
+                log.debug("player %s missed %s", player.name, obstacle)
+
         # Here we can end the game when player gets out of
         # the track bounds. For now, just keep the player at the same
         # location.
@@ -189,6 +211,9 @@ def process(players, track):
         player.action = actions.NONE
 
         positions.add((player.x, player.y))
+
+        # Burn fuel for this move, never below zero.
+        player.fuel = max(0, player.fuel - config.fuel_per_move)
 
         log.info(
             "process_actions: name=%s lane=%d pos=%d,%d score=%d "

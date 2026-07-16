@@ -13,11 +13,20 @@ from rose.engine.track import Track
 log = logging.getLogger("logic")
 
 
+def _determine_winner(players):
+    """Return the name of the highest-scoring player, or None if no players."""
+    if not players:
+        return None
+    return max(players, key=lambda p: p.score).name
+
+
 async def initialize_game(state):
     """Reset game settings and return re-initialized track and players."""
     state["reset"] = None
     state["running"] = 0
     state["timeleft"] = config.game_duration
+    state["gameover"] = False
+    state["winner"] = None
     track = initialize_track(state["track_type"] != "same")
     players = await initialize_players(state["drivers"])
     return track, players
@@ -95,9 +104,11 @@ async def game_loop(state, active_websockets):
         if state["reset"] == 1:
             track, players = await initialize_game(state)
 
-        # Stop game if timeleft is zero
-        if state["timeleft"] < 1:
+        # Stop game if timeleft is zero -> natural end, winner decided by score
+        if state["timeleft"] < 1 and state["running"] == 1:
             state["running"] = 0
+            state["gameover"] = True
+            state["winner"] = _determine_winner(players)
 
         # Check if the game is currently running and there's time left to play
         if state["running"] == 1:
@@ -133,14 +144,26 @@ async def game_step(state, players, track, active_websockets):
     """
 
     try:
+        # Cars that are out of fuel stop completely; the rest keep driving.
+        movable = [p for p in players if (p.fuel is None or p.fuel > 0)]
+
         # Fetch players actions using an asynchronous HTTP session
-        await net.fetch_drivers_actions(players, track.matrix())
+        if movable:
+            await net.fetch_drivers_actions(movable, track.matrix())
 
         # Update track
         track.update()
 
         # Process the actions of the players
-        score.process(players, track)
+        if movable:
+            score.process(movable, track)
+
+        # If every car has run dry, the round can't continue -- end it now
+        # by score instead of idling until the clock runs out.
+        if players and not movable and state["running"] == 1:
+            state["running"] = 0
+            state["gameover"] = True
+            state["winner"] = _determine_winner(players)
 
         # Send data to all WebSocket connections
         await net.update_websockets(True, state, players, track, active_websockets)
