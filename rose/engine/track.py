@@ -8,6 +8,7 @@ class Track(object):
     def __init__(self, is_track_random=False):
         self._matrix = None
         self.is_track_random = is_track_random
+        self._rows_since_fuel = 0
         self.reset()
 
     # Game state interface
@@ -78,5 +79,23 @@ class Track(object):
 
             for lane in range(config.max_players):
                 row[cell + lane * config.cells_per_player] = obstacle
+
+        # Occasionally add a fuel can, using the same fair placement as
+        # above so both lanes get an equal chance to refuel. A minimum gap
+        # since the last can keeps them spread out instead of clustering.
+        self._rows_since_fuel += 1
+        if (
+            self._rows_since_fuel >= config.fuel_min_gap
+            and random.random() < config.fuel_spawn_chance
+        ):
+            self._rows_since_fuel = 0
+            if self.is_track_random:
+                for lane in range(config.max_players):
+                    cell = random.choice(range(0, config.cells_per_player))
+                    row[cell + lane * config.cells_per_player] = obstacles.FUEL
+            else:
+                cell = random.choice(range(0, config.cells_per_player))
+                for lane in range(config.max_players):
+                    row[cell + lane * config.cells_per_player] = obstacles.FUEL
 
         return row

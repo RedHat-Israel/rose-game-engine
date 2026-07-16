@@ -61,7 +61,7 @@ async def fetch_driver_action(session, player, track_matrix):
 
 
 async def send_post_request(session, player, track_matrix):
-    data = {"info": {"car": {"x": player.x, "y": player.y}}, "track": track_matrix}
+    data = {"info": {"car": {"x": player.x, "y": player.y, "fuel": player.fuel}}, "track": track_matrix}
 
     async with session.post(player.URL, data=json.dumps(data).encode()) as response:
         return await response.json()
@@ -97,6 +97,8 @@ async def update_websockets(started, state, players, track, active_websockets):
             "timeleft": state["timeleft"],
             "players": [player.state() for player in players],
             "track": track.state(),
+            "gameover": state.get("gameover", False),
+            "winner": state.get("winner"),
         },
     }
 
