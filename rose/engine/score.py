@@ -57,6 +57,11 @@ def process(players, track):
         if obstacle == obstacles.NONE:
             # Move forward, leaving the obstacle on the track.
             player.score += config.score_move_forward
+            adj_lanes = player.adjacent_lanes()
+            for i in adj_lanes:
+                obs = track.get(i, player.y)
+                if obs == obstacles.PENGUIN:
+                    player.pinguin_cnt = 0
 
             log.debug(
                 "player %s hit no obstacle: got %d points",
@@ -70,6 +75,7 @@ def process(players, track):
             player.y += 1
             player.score += config.score_move_backward
             player.hits += 1
+            player.pinguin_cnt = 0
 
             log.debug(
                 "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -86,7 +92,7 @@ def process(players, track):
                 points = config.score_move_forward + config.score_jump
                 player.score += points
                 player.jumps += 1
-
+                player.pinguin_cnt = 0
                 log.debug(
                     "player %s avoided %s: got %d points",
                     player.name,
@@ -99,6 +105,7 @@ def process(players, track):
                 player.y += 1
                 player.score += config.score_move_backward
                 player.hits += 1
+                player.pinguin_cnt = 0
 
                 log.debug(
                     "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -115,7 +122,7 @@ def process(players, track):
                 points = config.score_move_forward + config.score_brake
                 player.score += points
                 player.breaks += 1
-
+                player.pinguin_cnt = 0
                 log.debug(
                     "player %s avoided %s: got %d points",
                     player.name,
@@ -128,6 +135,7 @@ def process(players, track):
                 player.y += 1
                 player.score += config.score_move_backward
                 player.hits += 1
+                player.pinguin_cnt = 0
 
                 log.debug(
                     "player %s hit %s: lost %d points, moved back to %d,%d",
@@ -142,10 +150,10 @@ def process(players, track):
             if player.action == actions.PICKUP:
                 # Move forward and collect an aquatic bird
                 track.clear(player.x, player.y)
-                points = config.score_move_forward + config.score_pickup
+                player.pinguin_cnt += 1
+                points = config.score_move_forward + calc_pinguin_combo(config.score_pickup , player.pinguin_cnt)
                 player.score += points
                 player.pickups += 1
-
                 log.debug(
                     "player %s picked up %s: got %d points",
                     player.name,
@@ -155,7 +163,7 @@ def process(players, track):
             else:
                 # Move forward leaving the obstacle on the track
                 player.score += config.score_move_forward
-
+                player.pinguin_cnt = 0
                 log.debug("player %s missed %s", player.name, obstacle)
 
         # Here we can end the game when player gets out of
@@ -174,6 +182,7 @@ def process(players, track):
                 player.x -= 1
             elif player.x < config.matrix_width - 1:
                 player.x += 1
+            player.pinguin_cnt = 0
 
             log.debug(
                 "player %s collision at %d,%d: lost %d points, " "moved to %d,%d",
@@ -200,3 +209,9 @@ def process(players, track):
             player.score,
             player.response_time,
         )
+
+
+def calc_pinguin_combo(base, pcnt):
+    if pcnt < 1:
+        return base
+    return base + pcnt - 1
