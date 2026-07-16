@@ -363,3 +363,27 @@ class TestCollisions(object):
         assert self.player2.y == 8
         # TODO: decrease score?
         assert self.player2.score == 0
+
+class TestGrandma(SinglePlayerTest):
+
+    def test_right(self):
+        self.player.action = actions.RIGHT
+        self.process()
+        self.assert_move_right()
+        self.assert_keep_obstacle()
+        assert not self.player.eliminated
+
+        def test_left(self):
+            self.player.action = actions.LEFT
+            self.process()
+            self.assert_move_left()
+            self.assert_keep_obstacle()
+            assert not self.player.eliminated
+
+        @pytest.mark.parametrize("action", FORWARD_ACTIONS)
+        def test_other(self, action):
+            self.player.action = action
+            self.process()
+            self.assert_move_back_no_punish()
+            self.assert_remove_obstacle()
+            assert self.player.eliminated

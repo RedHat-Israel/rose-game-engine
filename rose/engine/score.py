@@ -21,6 +21,8 @@ def process(players, track):
     # status, used for resolving collisions.
 
     for player in players:
+        if player.eliminated:
+            continue
         if player.action == actions.LEFT:
             if player.x > 0:
                 player.x -= 1
@@ -52,6 +54,8 @@ def process(players, track):
     # Now handle obstacles, preferring players in their own lane.
 
     for player in sorted_players:
+        if player.eliminated:
+            continue
         obstacle = track.get(player.x, player.y)
 
         if obstacle == obstacles.NONE:
@@ -63,6 +67,13 @@ def process(players, track):
                 player.name,
                 config.score_move_forward,
             )
+
+        elif obstacle == obstacles.GRANDMA:
+            track.clear(player.x, player.y)
+            player.score += config.score_move_backward
+            player.hits += 1
+            player.eliminated = True
+
 
         elif obstacle in (obstacles.TRASH, obstacles.BIKE, obstacles.BARRIER):
             # Move back consuming the obstacle.
